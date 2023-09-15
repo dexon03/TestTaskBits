@@ -1,0 +1,142 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+@model List<User>
+
+
+<div class="container p-3">
+    <div class="row pt-4">
+        <div class="col-6">
+            <h2 class="text-primary">Category List</h2>
+        </div>
+        <div class="col-6">
+            <a asp-action="UploadCsv" class="btn btn-primary"> <i class="fas fa-plus"></i> &nbsp; Upload csv</a>
+        </div>
+    </div>
+    <br>
+    <br/>
+    @if (Model.Any())
+    {
+        <table id="userTable" class="table table-bordered table-striped" style="width:100%">
+            <thead>
+                <tr>
+                    <th  data-sortable="true">Name</th>
+                    <th  data-sortable="true">Date of birth</th>
+                    <th  data-sortable="true">Married</th>
+                    <th  data-sortable="true">Phone</th>
+                    <th  data-sortable="true">Salary</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var obj in Model)
+            {
+                <tr>
+                    <td>
+                        <span hidden class="display-field" data-field="Id">@obj.Id</span>
+                        <input hidden type="text" class="edit-field" data-field="Id" value="@obj.Id"/>
+                        <span class="display-field" data-field="Name">@obj.Name</span>
+                        <input type="text" class="edit-field" data-field="Name" value="@obj.Name" style="display: none;"/>
+                    </td>
+                    <td>
+                        <span class="display-field" data-field="DateOfBirth">@obj.DateOfBirth</span>
+                        <input type="date" class="edit-field" data-field="DateOfBirth" value="@obj.DateOfBirth.ToString("yyyy-MM-dd")" style="display: none;" />
+                    </td>
+                    <td>
+                        <span class="display-field" data-field="Married">@(obj.Married ? "Yes" : "No")</span>
+                        <input type="checkbox" class="edit-field" data-field="Married" @(obj.Married ? "checked" : "unchecked") value="@(obj.Married ? "Yes" : "No")" style="display: none;" />
+                    </td>
+                    <td>
+                        <span class="display-field" data-field="Phone">@obj.Phone</span>
+                        <input type="text" class="edit-field" data-field="Phone" value="@obj.Phone" style="display: none;" />
+                    </td>
+                    <td>
+                        <span class="display-field" data-field="Salary">@obj.Salary</span>
+                        <input type="number" class="edit-field" data-field="Salary" value="@obj.Salary" style="display: none;" />
+                    </td>
+                    <td class="text-center">
+                        <div class="w-75 btn-group">
+                            <button class="btn btn-primary mx-2 edit-button"> Edit</button>
+                            <button class="btn btn-success save-button" style="display: none;"> Save</button>
+                            <button class="btn btn-danger delete-button"> Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <strong>Info!</strong> No data found.
+        </div>
+    }
+</div>
+
+@section Scripts
+{
+    <script>
+        $(document).ready(function () {
+            const table = $('#userTable').DataTable({
+                ordering: true,
+                searching: true,
+            });
+        });
+        $('.edit-button').click(function () {
+            var row = $(this).closest('tr');
+            row.find('.display-field').hide();
+            row.find('.edit-field').show();
+            row.find('.edit-button').hide();
+            row.find('.save-button').show();
+        });
+        $('.delete-button').click(function () {
+            var row = $(this).closest('tr');
+            var id = row.find('.display-field[data-field="Id"]').text();
+
+            $.ajax({
+                url: '/Home/Delete/' + id,
+                method: 'DELETE',
+                success: function () {
+                    row.remove();
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        });
+        
+        $('.save-button').click(function () {
+            var row = $(this).closest('tr');
+            var data = {};
+
+            row.find('.edit-field').each(function () {
+                var field = $(this);
+                var fieldName = field.data('field');
+                data[fieldName] = field.val();
+            });
+
+            $.ajax({
+                url: '/Home/Update',
+                method: 'PUT',
+                data: data,
+                success: function () {
+                    // Update the display fields with edited values
+                    row.find('.display-field').each(function () {
+                        var field = $(this);
+                        var fieldName = field.data('field');
+                        field.text(data[fieldName]);
+                    });
+
+                    row.find('.edit-field').hide();
+                    row.find('.display-field').show();
+                    row.find('.edit-button').show();
+                    row.find('.save-button').hide();
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        });
+    </script>
+}
